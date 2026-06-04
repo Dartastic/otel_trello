@@ -2,7 +2,6 @@
 // Copyright 2025-2026 Mindful Software LLC d/b/a Dartastic.io, All rights reserved.
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import 'otel_trello_suppression.dart';
 
@@ -54,51 +53,64 @@ Future<T> tracedTrello<T>({
   final t = tracer ?? OTel.tracerProvider().getTracer('otel_trello');
   final span = t.startSpan('trello $operation', kind: SpanKind.client);
   try {
-    span.setStringAttribute('rpc.system', 'trello');
+    span.addAttributes(
+        OTel.attributes([OTel.attributeString('rpc.system', 'trello')]));
     final r = await invoke();
     final res = r.result;
     if (res != null) {
       if (res.workspaceId != null) {
-        span.setStringAttribute('trello.workspace.id', res.workspaceId!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('trello.workspace.id', res.workspaceId!)]));
       }
       if (res.boardId != null) {
-        span.setStringAttribute('trello.board.id', res.boardId!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('trello.board.id', res.boardId!)]));
       }
       if (res.boardName != null) {
-        span.setStringAttribute('trello.board.name', res.boardName!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('trello.board.name', res.boardName!)]));
       }
       if (res.listId != null) {
-        span.setStringAttribute('trello.list.id', res.listId!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('trello.list.id', res.listId!)]));
       }
       if (res.cardId != null) {
-        span.setStringAttribute('trello.card.id', res.cardId!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('trello.card.id', res.cardId!)]));
       }
       if (res.cardName != null) {
-        span.setStringAttribute('trello.card.name', res.cardName!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('trello.card.name', res.cardName!)]));
       }
       if (res.memberId != null) {
-        span.setStringAttribute('user.id', res.memberId!);
+        span.addAttributes(
+            OTel.attributes([OTel.attributeString('user.id', res.memberId!)]));
       }
       if (res.action != null) {
-        span.setStringAttribute('trello.action', res.action!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('trello.action', res.action!)]));
       }
       if (res.labels != null) {
-        span.setStringAttribute('trello.labels', res.labels!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('trello.labels', res.labels!)]));
       }
       if (res.statusCode != null) {
-        span.setIntAttribute('http.response.status_code', res.statusCode!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeInt('http.response.status_code', res.statusCode!)]));
       }
       if (res.errorCode != null) {
-        span.setStringAttribute('trello.error.code', res.errorCode!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('trello.error.code', res.errorCode!)]));
       }
-      final fail =
-          res.errorCode != null ||
+      final fail = res.errorCode != null ||
           (res.statusCode != null && res.statusCode! >= 400);
       if (fail) {
-        span.setStringAttribute(
-          ErrorResource.errorType.key,
-          res.errorCode ?? 'trello.error',
-        );
+        span.addAttributes(OTel.attributes([
+          OTel.attributeString(
+            ErrorResource.errorType.key,
+            res.errorCode ?? 'trello.error',
+          )
+        ]));
         span.setStatus(SpanStatusCode.Error, res.errorMessage);
       }
     }
