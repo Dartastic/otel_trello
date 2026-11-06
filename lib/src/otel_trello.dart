@@ -1,11 +1,12 @@
-// Licensed under the Dartastic Pro Software License Agreement.
+// Licensed under the Apache License, Version 2.0
 // Copyright 2025-2026 Mindful Software LLC d/b/a Dartastic.io, All rights reserved.
 
-import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import 'otel_trello_suppression.dart';
 
 class TrelloResult {
+  /// Creates a result.
   const TrelloResult({
     this.workspaceId,
     this.boardId,
@@ -35,8 +36,13 @@ class TrelloResult {
   final String? errorMessage;
 }
 
+/// What a traced call returned: the value for the caller plus fields
+/// recorded on the span.
 class TrelloCallResult<T> {
+  /// Creates a call result.
   const TrelloCallResult({required this.value, this.result});
+
+  /// The value returned to the caller.
   final T value;
   final TrelloResult? result;
 }
@@ -44,70 +50,72 @@ class TrelloCallResult<T> {
 Future<T> tracedTrello<T>({
   required String operation,
   required Future<TrelloCallResult<T>> Function() invoke,
-  Tracer? tracer,
+  APITracer? tracer,
 }) async {
   if (trelloInstrumentationSuppressed()) {
     final r = await invoke();
     return r.value;
   }
-  final t = tracer ?? OTel.tracerProvider().getTracer('otel_trello');
+  final t = tracer ?? OTelAPI.tracerProvider().getTracer('otel_trello');
   final span = t.startSpan('trello $operation', kind: SpanKind.client);
   try {
     span.addAttributes(
-        OTel.attributes([OTel.attributeString('rpc.system', 'trello')]));
+        OTelAPI.attributes([OTelAPI.attributeString('rpc.system', 'trello')]));
     final r = await invoke();
     final res = r.result;
     if (res != null) {
       if (res.workspaceId != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('trello.workspace.id', res.workspaceId!)]));
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeString('trello.workspace.id', res.workspaceId!)
+        ]));
       }
       if (res.boardId != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('trello.board.id', res.boardId!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('trello.board.id', res.boardId!)]));
       }
       if (res.boardName != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('trello.board.name', res.boardName!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('trello.board.name', res.boardName!)]));
       }
       if (res.listId != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('trello.list.id', res.listId!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('trello.list.id', res.listId!)]));
       }
       if (res.cardId != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('trello.card.id', res.cardId!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('trello.card.id', res.cardId!)]));
       }
       if (res.cardName != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('trello.card.name', res.cardName!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('trello.card.name', res.cardName!)]));
       }
       if (res.memberId != null) {
-        span.addAttributes(
-            OTel.attributes([OTel.attributeString('user.id', res.memberId!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('user.id', res.memberId!)]));
       }
       if (res.action != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('trello.action', res.action!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('trello.action', res.action!)]));
       }
       if (res.labels != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('trello.labels', res.labels!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('trello.labels', res.labels!)]));
       }
       if (res.statusCode != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeInt('http.response.status_code', res.statusCode!)]));
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeInt('http.response.status_code', res.statusCode!)
+        ]));
       }
       if (res.errorCode != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('trello.error.code', res.errorCode!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('trello.error.code', res.errorCode!)]));
       }
       final fail = res.errorCode != null ||
           (res.statusCode != null && res.statusCode! >= 400);
       if (fail) {
-        span.addAttributes(OTel.attributes([
-          OTel.attributeString(
-            ErrorResource.errorType.key,
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeString(
+            ErrorAttributes.errorType.key,
             res.errorCode ?? 'trello.error',
           )
         ]));
